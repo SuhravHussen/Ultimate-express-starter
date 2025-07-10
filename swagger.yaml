@@ -1,0 +1,1483 @@
+openapi: 3.0.0
+info:
+  title: Multi-Organization ERP System API
+  description: API for managing organizations, users, employees, and payments in a multi-tenant ERP system
+  version: 1.0.0
+
+servers:
+  - url: /api
+    description: Main API server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Error message"
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          format: password
+          example: "password123"
+
+    LoginResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        organizations:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 1
+              name:
+                type: string
+                example: "Company A"
+              role:
+                type: string
+                enum: [super_admin, admin]
+                example: "admin"
+              permissions:
+                type: array
+                items:
+                  type: string
+                  example: "manage_employees"
+        is_global_admin:
+          type: boolean
+          example: false
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        first_name:
+          type: string
+          example: "John"
+        last_name:
+          type: string
+          example: "Doe"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        phone:
+          type: string
+          example: "+1234567890"
+        is_global_admin:
+          type: boolean
+          example: false
+        is_global_super_admin:
+          type: boolean
+          example: false
+        status:
+          type: string
+          enum: [active, inactive]
+          example: "active"
+        last_login:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Organization:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Company A"
+        email:
+          type: string
+          format: email
+          example: "info@companya.com"
+        phone:
+          type: string
+          example: "+1234567890"
+        address:
+          type: string
+          example: "123 Main St, City, Country"
+        logo_url:
+          type: string
+          format: uri
+          example: "https://example.com/logo.png"
+        status:
+          type: string
+          enum: [active, inactive]
+          example: "active"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UserOrganizationRole:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+          example: 1
+        organization_id:
+          type: integer
+          example: 1
+        role:
+          type: string
+          enum: [super_admin, admin]
+          example: "admin"
+        status:
+          type: string
+          enum: [active, inactive]
+          example: "active"
+        assigned_by:
+          type: integer
+          example: 2
+        assigned_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        organization:
+          $ref: "#/components/schemas/Organization"
+        user:
+          $ref: "#/components/schemas/User"
+
+    Employee:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        organization_id:
+          type: integer
+          example: 1
+        employee_id:
+          type: string
+          example: "EMP001"
+        first_name:
+          type: string
+          example: "Jane"
+        last_name:
+          type: string
+          example: "Smith"
+        email:
+          type: string
+          format: email
+          example: "jane.smith@example.com"
+        phone:
+          type: string
+          example: "+1234567890"
+        position:
+          type: string
+          example: "Developer"
+        department:
+          type: string
+          example: "IT"
+        salary:
+          type: number
+          format: float
+          example: 5000
+        hire_date:
+          type: string
+          format: date
+          example: "2023-01-15"
+        status:
+          type: string
+          enum: [active, inactive, terminated]
+          example: "active"
+        created_by:
+          type: integer
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Payment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        organization_id:
+          type: integer
+          example: 1
+        employee_id:
+          type: integer
+          example: 1
+        amount:
+          type: number
+          format: float
+          example: 5000
+        payment_type:
+          type: string
+          enum: [salary, bonus, overtime, deduction, other]
+          example: "salary"
+        payment_date:
+          type: string
+          format: date
+          example: "2023-01-31"
+        payment_method:
+          type: string
+          enum: [cash, bank_transfer, check, other]
+          example: "bank_transfer"
+        description:
+          type: string
+          example: "Monthly salary payment"
+        status:
+          type: string
+          enum: [pending, completed, failed]
+          example: "completed"
+        created_by:
+          type: integer
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PaginatedResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 50
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+
+    DashboardStats:
+      type: object
+      properties:
+        total_employees:
+          type: integer
+          example: 150
+        active_employees:
+          type: integer
+          example: 140
+        total_payments:
+          type: number
+          format: float
+          example: 750000
+        monthly_payments:
+          type: number
+          format: float
+          example: 75000
+        organizations_count:
+          type: integer
+          example: 5
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Authentication
+    description: Authentication operations
+  - name: Users
+    description: User management operations
+  - name: Organizations
+    description: Organization management operations
+  - name: UserOrganizationRoles
+    description: User-organization role management operations
+  - name: Employees
+    description: Employee management operations
+  - name: Payments
+    description: Payment management operations
+  - name: Dashboard
+    description: Dashboard and statistics operations
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logged out successfully"
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user information
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+                  organizations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        name:
+                          type: string
+                          example: "Company A"
+                        role:
+                          type: string
+                          enum: [super_admin, admin]
+                          example: "admin"
+                        permissions:
+                          type: array
+                          items:
+                            type: string
+                            example: "manage_employees"
+
+  /users:
+    get:
+      tags:
+        - Users
+      summary: Get list of users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: organization_id
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      users:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/User"
+
+    post:
+      tags:
+        - Users
+      summary: Create a new user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - first_name
+                - last_name
+                - email
+                - password
+              properties:
+                first_name:
+                  type: string
+                  example: "John"
+                last_name:
+                  type: string
+                  example: "Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john.doe@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "password123"
+                phone:
+                  type: string
+                  example: "+1234567890"
+                is_global_admin:
+                  type: boolean
+                  example: false
+                is_global_super_admin:
+                  type: boolean
+                  example: false
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+                  message:
+                    type: string
+                    example: "User created successfully"
+
+  /users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    put:
+      tags:
+        - Users
+      summary: Update a user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                  example: "John"
+                last_name:
+                  type: string
+                  example: "Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john.doe@example.com"
+                phone:
+                  type: string
+                  example: "+1234567890"
+                is_global_admin:
+                  type: boolean
+                  example: false
+                is_global_super_admin:
+                  type: boolean
+                  example: false
+                status:
+                  type: string
+                  enum: [active, inactive]
+                  example: "active"
+      responses:
+        "200":
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+                  message:
+                    type: string
+                    example: "User updated successfully"
+
+    delete:
+      tags:
+        - Users
+      summary: Delete a user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User deleted successfully"
+
+  /users/{id}/password:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    put:
+      tags:
+        - Users
+      summary: Update user password
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - current_password
+                - new_password
+              properties:
+                current_password:
+                  type: string
+                  format: password
+                  example: "password123"
+                new_password:
+                  type: string
+                  format: password
+                  example: "newpassword123"
+      responses:
+        "200":
+          description: Password updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password updated successfully"
+
+  /users/{id}/organizations:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      tags:
+        - Users
+      summary: Get user's organizations
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of user's organizations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organizations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        name:
+                          type: string
+                          example: "Company A"
+                        role:
+                          type: string
+                          enum: [super_admin, admin]
+                          example: "admin"
+                        status:
+                          type: string
+                          enum: [active, inactive]
+                          example: "active"
+
+  /user-organization-roles:
+    get:
+      tags:
+        - UserOrganizationRoles
+      summary: Get list of user-organization roles
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: query
+          schema:
+            type: integer
+        - name: organization_id
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: List of user-organization roles
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      roles:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/UserOrganizationRole"
+
+    post:
+      tags:
+        - UserOrganizationRoles
+      summary: Assign a role to a user in an organization
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - organization_id
+                - role
+              properties:
+                user_id:
+                  type: integer
+                  example: 1
+                organization_id:
+                  type: integer
+                  example: 1
+                role:
+                  type: string
+                  enum: [super_admin, admin]
+                  example: "admin"
+      responses:
+        "201":
+          description: Role assigned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  role:
+                    $ref: "#/components/schemas/UserOrganizationRole"
+                  message:
+                    type: string
+                    example: "Role assigned successfully"
+
+  /user-organization-roles/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    put:
+      tags:
+        - UserOrganizationRoles
+      summary: Update a user-organization role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum: [super_admin, admin]
+                  example: "admin"
+                status:
+                  type: string
+                  enum: [active, inactive]
+                  example: "active"
+      responses:
+        "200":
+          description: Role updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  role:
+                    $ref: "#/components/schemas/UserOrganizationRole"
+                  message:
+                    type: string
+                    example: "Role updated successfully"
+
+    delete:
+      tags:
+        - UserOrganizationRoles
+      summary: Remove a role from a user in an organization
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Role removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Role removed successfully"
+
+  /user-organization-roles/user/{user_id}:
+    parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      tags:
+        - UserOrganizationRoles
+      summary: Get user's roles in all organizations
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of user's roles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roles:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        organization:
+                          $ref: "#/components/schemas/Organization"
+                        role:
+                          type: string
+                          enum: [super_admin, admin]
+                          example: "admin"
+                        status:
+                          type: string
+                          enum: [active, inactive]
+                          example: "active"
+
+  /organizations:
+    get:
+      tags:
+        - Organizations
+      summary: Get list of organizations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of organizations
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      organizations:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Organization"
+
+    post:
+      tags:
+        - Organizations
+      summary: Create a new organization
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: "Company A"
+                email:
+                  type: string
+                  format: email
+                  example: "info@companya.com"
+                phone:
+                  type: string
+                  example: "+1234567890"
+                address:
+                  type: string
+                  example: "123 Main St, City, Country"
+                logo_url:
+                  type: string
+                  format: uri
+                  example: "https://example.com/logo.png"
+      responses:
+        "201":
+          description: Organization created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organization:
+                    $ref: "#/components/schemas/Organization"
+                  message:
+                    type: string
+                    example: "Organization created successfully"
+
+  /organizations/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      tags:
+        - Organizations
+      summary: Get organization details
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Organization details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organization:
+                    $ref: "#/components/schemas/Organization"
+
+    put:
+      tags:
+        - Organizations
+      summary: Update an organization
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Company A"
+                email:
+                  type: string
+                  format: email
+                  example: "info@companya.com"
+                phone:
+                  type: string
+                  example: "+1234567890"
+                address:
+                  type: string
+                  example: "123 Main St, City, Country"
+                logo_url:
+                  type: string
+                  format: uri
+                  example: "https://example.com/logo.png"
+                status:
+                  type: string
+                  enum: [active, inactive]
+                  example: "active"
+      responses:
+        "200":
+          description: Organization updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organization:
+                    $ref: "#/components/schemas/Organization"
+                  message:
+                    type: string
+                    example: "Organization updated successfully"
+
+    delete:
+      tags:
+        - Organizations
+      summary: Delete an organization
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Organization deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Organization deleted successfully"
+
+  /organizations/{org_id}/employees:
+    parameters:
+      - name: org_id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Organization ID
+
+    get:
+      tags:
+        - Employees
+      summary: Get list of employees for specific organization
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, terminated]
+      responses:
+        "200":
+          description: List of employees for the organization
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      employees:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Employee"
+
+    post:
+      tags:
+        - Employees
+      summary: Create a new employee in specific organization
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - employee_id
+                - first_name
+                - last_name
+              properties:
+                employee_id:
+                  type: string
+                  example: "EMP001"
+                first_name:
+                  type: string
+                  example: "Jane"
+                last_name:
+                  type: string
+                  example: "Smith"
+                email:
+                  type: string
+                  format: email
+                  example: "jane.smith@example.com"
+                phone:
+                  type: string
+                  example: "+1234567890"
+                position:
+                  type: string
+                  example: "Developer"
+                department:
+                  type: string
+                  example: "IT"
+                salary:
+                  type: number
+                  format: float
+                  example: 5000
+                hire_date:
+                  type: string
+                  format: date
+                  example: "2023-01-15"
+      responses:
+        "201":
+          description: Employee created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  employee:
+                    $ref: "#/components/schemas/Employee"
+                  message:
+                    type: string
+                    example: "Employee created successfully"
+
+  /organizations/{org_id}/employees/{emp_id}:
+    parameters:
+      - name: org_id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Organization ID
+      - name: emp_id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Employee ID
+
+    get:
+      tags:
+        - Employees
+      summary: Get employee details from specific organization
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Employee details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  employee:
+                    $ref: "#/components/schemas/Employee"
+
+    put:
+      tags:
+        - Employees
+      summary: Update an employee in specific organization
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                  example: "Jane"
+                last_name:
+                  type: string
+                  example: "Smith"
+                email:
+                  type: string
+                  format: email
+                  example: "jane.smith@example.com"
+                phone:
+                  type: string
+                  example: "+1234567890"
+                position:
+                  type: string
+                  example: "Developer"
+                department:
+                  type: string
+                  example: "IT"
+                salary:
+                  type: number
+                  format: float
+                  example: 5000
+                status:
+                  type: string
+                  enum: [active, inactive, terminated]
+                  example: "active"
+      responses:
+        "200":
+          description: Employee updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  employee:
+                    $ref: "#/components/schemas/Employee"
+                  message:
+                    type: string
+                    example: "Employee updated successfully"
+
+    delete:
+      tags:
+        - Employees
+      summary: Delete an employee from specific organization
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Employee deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Employee deleted successfully"
+
+  /organizations/{org_id}/payments:
+    parameters:
+      - name: org_id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Organization ID
+
+    get:
+      tags:
+        - Payments
+      summary: Get list of payments for specific organization
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: employee_id
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: payment_type
+          in: query
+          schema:
+            type: string
+            enum: [salary, bonus, overtime, deduction, other]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, completed, failed]
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: List of payments for the organization
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      payments:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Payment"
+
+    post:
+      tags:
+        - Payments
+      summary: Create a new payment in specific organization
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - employee_id
+                - amount
+                - payment_type
+                - payment_date
+              properties:
+                employee_id:
+                  type: integer
+                  example: 1
+                amount:
+                  type: number
+                  format: float
+                  example: 5000
+                payment_type:
+                  type: string
+                  enum: [salary, bonus, overtime, deduction, other]
+                  example: "salary"
+                payment_date:
+                  type: string
+                  format: date
+                  example: "2023-01-31"
+                payment_method:
+                  type: string
+                  enum: [cash, bank_transfer, check, other]
+                  example: "bank_transfer"
+                description:
+                  type: string
+                  example: "Monthly salary payment"
+      responses:
+        "201":
+          description: Payment created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payment:
+                    $ref: "#/components/schemas/Payment"
+                  message:
+                    type: string
+                    example: "Payment created successfully"
+
+  /organizations/{org_id}/payments/{payment_id}:
+    parameters:
+      - name: org_id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Organization ID
+      - name: payment_id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Payment ID
+
+    get:
+      tags:
+        - Payments
+      summary: Get payment details from specific organization
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Payment details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payment:
+                    $ref: "#/components/schemas/Payment"
+
+    put:
+      tags:
+        - Payments
+      summary: Update a payment in specific organization
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  format: float
+                  example: 5000
+                payment_type:
+                  type: string
+                  enum: [salary, bonus, overtime, deduction, other]
+                  example: "salary"
+                payment_date:
+                  type: string
+                  format: date
+                  example: "2023-01-31"
+                payment_method:
+                  type: string
+                  enum: [cash, bank_transfer, check, other]
+                  example: "bank_transfer"
+                description:
+                  type: string
+                  example: "Monthly salary payment"
+                status:
+                  type: string
+                  enum: [pending, completed, failed]
+                  example: "completed"
+      responses:
+        "200":
+          description: Payment updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payment:
+                    $ref: "#/components/schemas/Payment"
+                  message:
+                    type: string
+                    example: "Payment updated successfully"
+
+    delete:
+      tags:
+        - Payments
+      summary: Delete a payment from specific organization
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Payment deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Payment deleted successfully"
+
+  /organizations/{org_id}/dashboard/stats:
+    parameters:
+      - name: org_id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Organization ID
+
+    get:
+      tags:
+        - Dashboard
+      summary: Get dashboard statistics for specific organization
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
